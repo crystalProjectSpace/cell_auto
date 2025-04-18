@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>CELL_AUTOMATA LAB</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<meta name="description" content="Small web site dedicated to modelling of cellular automata" />
+		<link rel="stylesheet" href="./styles.css" />
+	</head>
+	<body>
+		<div class="canvas-wrap">
+			<canvas class="canvas" id="cell-canvas"></canvas>
+			<span class="canvas-progress-label" id="cell-label"></span>
+			<button type="button" class="cell-btn _save" id="cell-save">
+				SAVE
+			</button>
+		</div>
+	</body>
+	<script type="module">
+		import { Graphics } from './graphics.mjs'
+		
+		document.addEventListener('DOMContentLoaded', () => {
+			const W_GRID = 250
+			const H_GRID = 250
+			const PROB = 0.2
+			const PALETTE = [
+				{R: 0, G: 0, B: 0, A: 255},
+				{R: 70, G: 180, B: 225, A: 255},
+			]
+			const DURATION = 5000
+
+			const INITDATA = JSON.stringify({
+				width: W_GRID,
+				height: H_GRID,
+				probability: PROB,
+				colorMap: PALETTE
+			})
+			
+			const canvas = document.getElementById('cell-canvas')
+			const label = document.getElementById('cell-label')
+			const saver = document.getElementById('cell-save')
+
+			const graphOutput = new Graphics(canvas, saver, W_GRID, H_GRID)
+			const cellGenerator = new Worker('./index.mjs', { type: 'module' })
+
+			cellGenerator.onmessage = handleWorkerOutput			
+			
+			function handleWorkerOutput(evt) {
+				const { type, payload } = evt.data
+				switch (type) {
+					case 'init': {
+						console.log('INIT_DONE')
+						saver.disabled = true
+						cellGenerator.postMessage({ type: 'run', payload: DURATION })
+						break
+					}
+					case 'run': {
+						const msg = `MODEL RUN CMPL: ${payload}ms`
+						console.log(msg)
+						cellGenerator.postMessage({ type: 'graph' })
+						break
+					}
+					case 'progress': {
+						const msg = `PROGRESS: ${(100 * payload / DURATION).toFixed(2)}%`
+						label.innerText = msg
+						break
+					}
+					case 'graph': {
+						graphOutput.drawBuffer(payload)
+						saver.disabled = false
+						break
+					}
+				}
+			}
+			
+			cellGenerator.postMessage({ type: 'init', payload: INITDATA })
+		})
+	</script>
+</html>
