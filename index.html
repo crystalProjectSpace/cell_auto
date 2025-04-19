@@ -5,27 +5,50 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
 		<meta name="description" content="Small web site dedicated to modelling of cellular automata" />
-		<link rel="stylesheet" href="./styles.css" />
+		<link rel="stylesheet" href="./styles/styles.css" />
 	</head>
 	<body>
-		<div class="canvas-wrap">
-			<canvas class="canvas" id="cell-canvas"></canvas>
-			<span class="canvas-progress-label" id="cell-label"></span>
-			<button type="button" class="cell-btn _save" id="cell-save">
-				SAVE
-			</button>
-		</div>
+		<section class="cell-section">
+			<div class="canvas-wrap">
+				<canvas class="canvas" id="cell-canvas"></canvas>
+				<span class="canvas-progress-label" id="cell-label"></span>
+			</div>
+			<menu class="cell-options">
+				<li class="cell-btn-wrap">
+					<button type="button" class="cell-btn _init" id="cell-init">
+						RESET
+					</button>
+				</li>
+				<li class="cell-btn-wrap">
+					<button type="button" class="cell-btn _start" id="cell-start">
+						START
+					</button>
+				</li>
+				<li class="cell-btn-wrap">
+					<button type="button" class="cell-btn _save" id="cell-save">
+						SAVE
+					</button>
+				</li>
+			</menu>
+		</section>
+
 	</body>
 	<script type="module">
-		import { Graphics } from './graphics.mjs'
+		import { Graphics } from './scripts/graphics.mjs'
 		
 		document.addEventListener('DOMContentLoaded', () => {
-			const W_GRID = 250
-			const H_GRID = 250
-			const PROB = 0.2
+			const W_GRID = 750
+			const H_GRID = 750
+			const PROB = 0.3
 			const PALETTE = [
 				{R: 0, G: 0, B: 0, A: 255},
 				{R: 70, G: 180, B: 225, A: 255},
+			]
+			const MIREK_PALETTE = [
+				{R: 0, G: 0, B: 0, A: 255},
+				{R: 30, G: 110, B: 225, A: 225},
+				{R: 70, G: 255, B: 85, A: 255},
+				{R: 220, G: 40, B: 235, A: 255},
 			]
 			const DURATION = 5000
 
@@ -33,15 +56,31 @@
 				width: W_GRID,
 				height: H_GRID,
 				probability: PROB,
-				colorMap: PALETTE
+				colorMap: MIREK_PALETTE,
 			})
 			
 			const canvas = document.getElementById('cell-canvas')
 			const label = document.getElementById('cell-label')
 			const saver = document.getElementById('cell-save')
+			const launcher = document.getElementById('cell-start')
+			const resetter = document.getElementById('cell-init')
 
 			const graphOutput = new Graphics(canvas, saver, W_GRID, H_GRID)
-			const cellGenerator = new Worker('./index.mjs', { type: 'module' })
+			const cellGenerator = new Worker('./scripts/index.mjs', { type: 'module' })
+
+			function reset() {
+				cellGenerator.postMessage({ type: 'init', payload: INITDATA })
+			}
+
+			function launch() {
+				cellGenerator.postMessage({ type: 'run', payload: DURATION })
+			}
+
+			resetter.addEventListener('click', reset)
+			launcher.addEventListener('click', launch)
+
+			launcher.disabled = true
+			saver.disabled = true
 
 			cellGenerator.onmessage = handleWorkerOutput			
 			
@@ -50,12 +89,14 @@
 				switch (type) {
 					case 'init': {
 						console.log('INIT_DONE')
-						saver.disabled = true
-						cellGenerator.postMessage({ type: 'run', payload: DURATION })
+						launcher.disabled = false
 						break
 					}
 					case 'run': {
 						const msg = `MODEL RUN CMPL: ${payload}ms`
+						launcher.disabled = false
+						saver.disabled = false
+						resetter.disabled = false
 						console.log(msg)
 						cellGenerator.postMessage({ type: 'graph' })
 						break
@@ -72,8 +113,6 @@
 					}
 				}
 			}
-			
-			cellGenerator.postMessage({ type: 'init', payload: INITDATA })
 		})
 	</script>
 </html>

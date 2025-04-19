@@ -13,6 +13,7 @@
     --text-cl: rgba(65, 220, 255, 1);
     --text-shadow-cl: rgba(65, 220, 255, 0.25);
     --main-shadow-cl: rgba(75, 180, 255, 0.25);
+    --grid-cl: rgba(75, 180, 255, 0.07);
     font-family: 'Consolas';
     font-size: 16px;
 }
@@ -32,16 +33,19 @@ body {
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    padding: 64px 0;
     row-gap: 16px;
-    margin: auto;
 }
 
 .canvas {
     display: block;
-    width: 500px;
-    height: 500px;
+    width: 750px;
+    height: 750px;
     box-shadow: 0 0 3px 0 var(--text-cl);
+    background-image:
+      linear-gradient(0deg, var(--grid-cl), var(--grid-cl) 1px, transparent 1px, transparent 49px, var(--grid-cl) 49px, var(--grid-cl)),
+      linear-gradient(90deg, var(--grid-cl), var(--grid-cl) 1px, transparent 1px, transparent 49px, var(--grid-cl) 49px, var(--grid-cl));
+    background-size: 50px 50px, 50px 50px;
+    background-repeat: repeat, repeat;
 }
 
 .canvas-progress-label {
@@ -58,7 +62,7 @@ body {
     transition: all 0.3s;
     font-size: 14px;
     line-height: 14px;
-    padding: 4px;
+    padding: 4px 32px;
 }
 
 .cell-btn:hover,
@@ -70,7 +74,22 @@ body {
 }
 
 .cell-btn:disabled {
-    color: transparent;
     opacity: 0.4;
     pointer-events: none;
+}
+
+.cell-section {
+    padding: 64px 0;
+    width: fit-content;
+    margin: auto;
+    display: flex;
+    align-items: stretch;
+    column-gap: 16px;
+}
+
+.cell-options {
+    display: flex;
+    flex-direction: column;
+    row-gap: 4px;
+    border-radius: 4px;
 }

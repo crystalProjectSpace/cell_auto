@@ -42,18 +42,20 @@ export class CellModel {
 		const w0 = this.#width * y0
 		const w = this.#width * y
 		const w1 = this.#width * y1
+
+		const currentState = this.#cells[w + x] & 255
 		
-		const NW = this.#cells[w0 + x0] & 255
-		const N = this.#cells[w0 + x] & 255
-		const NE = this.#cells[w0 + x1] & 255
-		const W = this.#cells[w + x0] & 255
-		const C = this.#cells[w + x] & 255
-		const E = this.#cells[w + x1] & 255
-		const SW = this.#cells[w1 + x0] & 255
-		const S = this.#cells[w1 + x] & 255
-		const SE = this.#cells[w1 + x1] & 255
+		const NW = (this.#cells[w0 + x0] & 255) === 1 ? 1 : 0
+		const N = (this.#cells[w0 + x] & 255) === 1 ? 1 : 0
+		const NE = (this.#cells[w0 + x1] & 255) === 1 ? 1 : 0
+		const W = (this.#cells[w + x0] & 255) === 1 ? 1 : 0
+		const C = currentState === 1 ? 1 : 0
+		const E = (this.#cells[w + x1] & 255) === 1 ? 1 : 0
+		const SW = (this.#cells[w1 + x0] & 255) === 1 ? 1 : 0
+		const S = (this.#cells[w1 + x] & 255) === 1 ? 1 : 0
+		const SE = (this.#cells[w1 + x1] & 255) === 1 ? 1 : 0
 		
-		this.#state[0] = C
+		this.#state[0] = currentState
 		this.#state[1] = NW + N + NE + W + C + E + SW + S + SE
 		this.#state[2] = NW + W + SW
 	}
@@ -74,18 +76,19 @@ export class CellModel {
 		const w = this.#width * y
 		const w1 = this.#width * y1
 		
+		const currentState = this.#cells[w + x] & 255
 		
-		const NW = this.#cells[w0 + x0] & 255
-		const W = this.#cells[w + x0] & 255
-		const SW = this.#cells[w1 + x0] & 255
+		const NW = (this.#cells[w0 + x0] & 255) === 1 ? 1 : 0
+		const W = (this.#cells[w + x0] & 255) === 1 ? 1 : 0
+		const SW = (this.#cells[w1 + x0] & 255) === 1 ? 1 : 0
 	
-		const C = this.#cells[w + x] & 255
+		const C = currentState === 1 ? 1 : 0
 		
-		const NE = this.#cells[w0 + x1] & 255
-		const E = this.#cells[w + x1] & 255		
-		const SE = this.#cells[w1 + x1] & 255
+		const NE = (this.#cells[w0 + x1] & 255) === 1 ? 1 : 0
+		const E = (this.#cells[w + x1] & 255) === 1 ? 1 : 0
+		const SE = (this.#cells[w1 + x1] & 255) === 1 ? 1 : 0
 		
-		this.#state[0] = C
+		this.#state[0] = currentState
 		this.#state[1] += (NE + E + SE - this.#state[2])
 		this.#state[2] = NW + W + SW
 	}
@@ -98,7 +101,7 @@ export class CellModel {
 		for (let i = 0; i < this.#cellCount; i++) {
 			x > 0 ? this.#nextCellSumm(x, y) : this.#getActiveSumm(x, y)
 
-			this.#cells[i] |= this.#transit()
+			this.#cells[i] |= this.#transitMirekGro()
 			if (++x === this.#width) {
 				x = 0
 				y++
@@ -142,6 +145,32 @@ export class CellModel {
 			case 3:
 			case 4: return 256
 			default: return 0
+		}
+	}
+
+		/**
+	* @description правило MirekGro/StarWars из "поколенческих" правил
+	*/
+	#transitMirekGro() {
+		const _state = this.#state[0]
+		const _summ = this.#state[1]
+		switch (_state) {
+			case 0: return _summ === 2 ? 256 : 0
+			case 1: return (_summ < 4 || _summ > 6) ? 512 : 256
+			case 2: return 768
+			case 3: return 0
+		}
+	}
+	// s/b/c >>> 	345/24/25 :: BOMBER_RULE
+	#transitBomber() {
+		const _state = this.#state[0]
+		const _summ = this.#state[1]
+		switch (_state) {
+			case 0: return (_summ === 2 || _summ == 4) ? 256 : 0
+			case 1: return (_summ < 4 || _summ > 6) ? 512 : 256
+			case 2: return 768
+			case 24: return 0
+			default: return (_state + 1) << 8
 		}
 	}
 	
